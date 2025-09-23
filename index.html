@@ -14,17 +14,39 @@
             margin: 0;
             overflow: hidden;
             font-family: 'Inter', 'Noto Sans Arabic', sans-serif;
-            background: #000;
+            background: #060b17;
+            position: relative;
         }
         
         #canvas-container {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        #canvas-container canvas {
+            pointer-events: auto;
+        }
+        
+        /* City Background */
+        #city-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: 
+                radial-gradient(ellipse at 50% 100%, rgba(0, 165, 80, 0.1) 0%, transparent 50%),
+                linear-gradient(to bottom, #0a0f1b 0%, #030509 100%);
+            z-index: 0;
         }
         
         #controls {
-            position: absolute;
+            position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
@@ -36,7 +58,7 @@
             border: 1px solid rgba(0, 165, 80, 0.3);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8),
                         0 0 60px rgba(0, 165, 80, 0.2) inset;
-            z-index: 100;
+            z-index: 1000;
             display: flex;
             gap: 20px;
             align-items: center;
@@ -234,7 +256,7 @@
             font-weight: 700;
         }
         #national-day-badge {
-            position: absolute;
+            position: fixed;
             top: 20px;
             left: 20px;
             background: linear-gradient(135deg, #00A550 0%, #005025 100%);
@@ -244,7 +266,7 @@
             font-weight: bold;
             box-shadow: 0 5px 20px rgba(0, 165, 80, 0.4);
             border: 2px solid rgba(255, 255, 255, 0.2);
-            z-index: 100;
+            z-index: 1000;
             opacity: 0;
             transform: scale(0.8);
             transition: all 0.5s ease-out;
@@ -299,6 +321,37 @@
             transform: scale(0.95);
         }
         
+        .icon-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 165, 80, 0.3);
+            background: rgba(0, 165, 80, 0.1);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+        
+        .icon-btn:hover {
+            background: rgba(0, 165, 80, 0.2);
+            border-color: rgba(0, 165, 80, 0.6);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(0, 165, 80, 0.4);
+        }
+        
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+        
         /* Mobile responsiveness */
         @media (max-width: 768px) {
             #controls {
@@ -330,9 +383,39 @@
                 height: 40px;
             }
         }
+        
+        /* Camera controls hint */
+        .controls-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(10, 10, 10, 0.8);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 100;
+            transition: opacity 0.3s ease;
+        }
+        
+        .controls-hint:hover {
+            opacity: 0.3;
+        }
+        
+        .hint-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
+    <!-- Simple Background -->
+    <div id="city-bg"></div>
+    
     <div id="canvas-container"></div>
     <div id="national-day-badge">
         <span class="year">95</span>
@@ -351,6 +434,13 @@
         <button class="button" id="export-btn" data-ar="تحميل الفيديو" data-en="Export Video">تحميل الفيديو</button>
         <button class="button lucky-btn" id="lucky-btn" data-ar="جرّب حظك 🎲" data-en="I'm Feeling Lucky 🎲">جرّب حظك 🎲</button>
         <div class="divider"></div>
+        <div class="icon-buttons">
+            <button class="icon-btn" id="king-btn" title="Saudi Flag">🇸🇦</button>
+            <button class="icon-btn" id="mbs-btn" title="Crown Prince MBS">🤴</button>
+            <button class="icon-btn" id="map-btn" title="Saudi Arabia Map">🗺️</button>
+            <button class="icon-btn" id="kaaba-btn" title="Kaaba">🕋</button>
+        </div>
+        <div class="divider"></div>
         <button class="lang-toggle" id="lang-toggle" title="Switch Language">
             <span class="lang-icon">🌐</span>
         </button>
@@ -363,6 +453,17 @@
         <div>Drones: <span>0</span></div>
         <div>FPS: <span>0</span></div>
     </div>
+    
+    <!-- Camera controls hint -->
+    <div class="controls-hint">
+        <div class="hint-item">🖱️ Left Click + Drag: Rotate</div>
+        <div class="hint-item">📏 Scroll: Zoom</div>
+        <div class="hint-item">✋ Right Click + Drag: Pan</div>
+    </div>
     <script type="module" src="/src/main.js"></script>
+    
+    <!-- 100% privacy-first analytics -->
+    <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+    <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif?collect-dnt=true" alt="" referrerpolicy="no-referrer-when-downgrade"/></noscript>
 </body>
 </html>

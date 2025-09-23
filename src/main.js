@@ -13,10 +13,10 @@ class DroneShowApp {
     }
 
     init() {
-        // Scene setup - darker for better contrast
+        // Scene setup - transparent to show HTML background
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x000511);
-        this.scene.fog = new THREE.Fog(0x000511, 100, 1500);
+        this.scene.background = null; // Transparent to show city background
+        this.scene.fog = new THREE.Fog(0x060b17, 150, 900); // Matching city palette
 
         // Camera setup
         this.camera = new THREE.PerspectiveCamera(
@@ -28,20 +28,35 @@ class DroneShowApp {
         this.camera.position.set(0, 100, 400);
 
         // Renderer setup
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        this.renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            preserveDrawingBuffer: true,
+            alpha: true // Enable transparency
+        });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Cap DPI for performance
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.container.appendChild(this.renderer.domElement);
 
-        // Controls
+        // Controls - Enhanced for better interactivity
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
         this.controls.maxDistance = 800;
         this.controls.minDistance = 50;
-        this.controls.target.set(0, 100, 0);
+        this.controls.target.set(0, 50, 0);
+        this.controls.enablePan = true;
+        this.controls.panSpeed = 0.8;
+        this.controls.rotateSpeed = 0.8;
+        this.controls.zoomSpeed = 1.2;
+        
+        // Smooth zoom with mouse wheel
+        this.controls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN
+        };
 
         // Lighting - increased for better visibility
         const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
@@ -56,9 +71,6 @@ class DroneShowApp {
         this.skyEnvironment = new SkyEnvironment(this.scene);
         this.droneShowManager = new DroneShowManager(this.scene);
         this.textToFormation = new TextToFormation();
-        
-        // Add simple ground
-        this.createGround();
 
         // Start animation loop
         this.animate();
@@ -72,7 +84,7 @@ class DroneShowApp {
         const luckyBtn = document.getElementById('lucky-btn');
 
         // Saudi sayings for the lucky button
-        this.saudiSayings = [
+        this.saudiSayingsAr = [
             'يا حلو ديرتنا والله',
             'الوطن بقلوبنا دايم',
             'من الديرة وأفتخر',
@@ -83,6 +95,19 @@ class DroneShowApp {
             'السعودية بقلبي قبل اسمي',
             'كبرنا وكبرت عزتنا معها',
             'الوطن غالي وما له بديل'
+        ];
+        
+        this.saudiSayingsEn = [
+            'SAUDI ARABIA',
+            'VISION 2030',
+            'SAUDI NATIONAL DAY',
+            'KINGDOM OF SAUDI ARABIA',
+            'SAUDI PRIDE',
+            'ONE NATION',
+            'SAUDI STRONG',
+            'FUTURE SAUDI',
+            'SAUDI FOREVER',
+            'PROUD SAUDI'
         ];
 
         // Initialize language from localStorage or default to Arabic
@@ -129,9 +154,13 @@ class DroneShowApp {
         });
 
         luckyBtn.addEventListener('click', () => {
-            // Pick a random saying
-            const randomSaying = this.saudiSayings[Math.floor(Math.random() * this.saudiSayings.length)];
+            // Pick a random saying based on current language
+            const sayingsArray = this.currentLang === 'ar' ? this.saudiSayingsAr : this.saudiSayingsEn;
+            const randomSaying = sayingsArray[Math.floor(Math.random() * sayingsArray.length)];
             textInput.value = randomSaying;
+            
+            // Update text direction based on content
+            textInput.style.direction = this.currentLang === 'ar' ? 'rtl' : 'ltr';
             
             // Update character counter
             charCount.textContent = randomSaying.length;
@@ -170,6 +199,28 @@ class DroneShowApp {
         setTimeout(() => {
             this.generateShow(textInput.value);
         }, 1000);
+        
+        // Icon buttons
+        const kingBtn = document.getElementById('king-btn');
+        const mbsBtn = document.getElementById('mbs-btn');
+        const mapBtn = document.getElementById('map-btn');
+        const kaabaBtn = document.getElementById('kaaba-btn');
+        
+        kingBtn.addEventListener('click', () => {
+            this.droneShowManager.transitionToIcon('king');
+        });
+        
+        mbsBtn.addEventListener('click', () => {
+            this.droneShowManager.transitionToIcon('mbs');
+        });
+        
+        mapBtn.addEventListener('click', () => {
+            this.droneShowManager.transitionToIcon('map');
+        });
+        
+        kaabaBtn.addEventListener('click', () => {
+            this.droneShowManager.transitionToIcon('kaaba');
+        });
     }
 
     async generateShow(text) {

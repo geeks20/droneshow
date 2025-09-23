@@ -3,6 +3,8 @@ import gsap from 'gsap';
 import { Drone } from './FastDrone.js';
 import { SaudiFlag } from './SaudiFlag.js';
 import { SaudiConfetti } from './SaudiConfetti.js';
+import { WaveEffect } from './WaveEffect.js';
+import { SaudiIcons } from './SaudiIcons.js';
 
 export class DroneShowManager {
     constructor(scene) {
@@ -11,6 +13,8 @@ export class DroneShowManager {
         this.masterTimeline = null;
         this.saudiFlag = new SaudiFlag();
         this.saudiConfetti = new SaudiConfetti(scene);
+        this.waveEffect = new WaveEffect();
+        this.saudiIcons = new SaudiIcons();
         this.coolEffects = null; // Will be set from main
     }
 
@@ -40,6 +44,7 @@ export class DroneShowManager {
             );
             
             this.scene.add(drone.mesh);
+            this.scene.add(drone.trail); // Add trail to scene
             this.drones.push(drone);
         }
         
@@ -62,16 +67,29 @@ export class DroneShowManager {
         // Phase 1: Hidden reveal - start with random formation
         this.createHiddenReveal(formationData);
         
-        // Phase 2: Hold text (Arabic or English)
-        this.masterTimeline.to({}, { duration: 3 }, "+=1");
-        
-        // Phase 3: Pop-out stars effect
+        // Phase 2: Hold text (Arabic or English) with wave effect
+        this.masterTimeline.to({}, { duration: 1 }, "+=1");
         this.masterTimeline.call(() => {
+            // Apply wave effect to text
+            this.waveEffect.applyWave(this.drones, {
+                amplitude: 15,
+                duration: 2,
+                direction: 'horizontal'
+            });
+        });
+        this.masterTimeline.to({}, { duration: 2 }, "+=0");
+        
+        // Phase 3: Pop-out stars effect with rainbow trails
+        this.masterTimeline.call(() => {
+            // Enable rainbow trails for this effect
+            this.drones.forEach(drone => drone.setTrailType('rainbow'));
             this.createPopOutStars();
         }, null, "+=0");
         
         // Phase 4: Transition to Saudi flag with confetti
         this.masterTimeline.call(() => {
+            // Sparkle trails for flag formation
+            this.drones.forEach(drone => drone.setTrailType('sparkle'));
             this.transitionToFlag();
             // Show National Day badge
             this.showNationalDayBadge();
@@ -309,6 +327,83 @@ export class DroneShowManager {
             this.masterTimeline.kill();
             this.masterTimeline = null;
         }
+    }
+
+    transitionToIcon(iconType) {
+        console.log(`Transitioning to ${iconType} icon`);
+        
+        let iconData;
+        switch(iconType) {
+            case 'king':
+                iconData = this.saudiIcons.generateKingSalmanIcon();
+                break;
+            case 'mbs':
+                iconData = this.saudiIcons.generateMBSIcon();
+                break;
+            case 'map':
+                iconData = this.saudiIcons.generateSaudiMapIcon();
+                break;
+            case 'kaaba':
+                iconData = this.saudiIcons.generateKaabaIcon();
+                break;
+            default:
+                return;
+        }
+        
+        // Stop current timeline if running
+        if (this.masterTimeline) {
+            this.masterTimeline.pause();
+        }
+        
+        // Ensure we have enough drones
+        while (this.drones.length < iconData.droneCount) {
+            const drone = new Drone();
+            drone.setPosition(
+                (Math.random() - 0.5) * 200,
+                50 + Math.random() * 100,
+                (Math.random() - 0.5) * 200
+            );
+            this.scene.add(drone.mesh);
+            this.scene.add(drone.trail);
+            this.drones.push(drone);
+        }
+        
+        // Quick assignment
+        const currentPositions = this.drones.map(d => d.mesh.position);
+        const assignments = this.textToFormation.assignDronesToTargets(
+            currentPositions,
+            iconData.positions
+        );
+        
+        // Enable sparkle trails for icon formation
+        this.drones.forEach(drone => drone.setTrailType('sparkle'));
+        
+        // Animate to icon positions
+        assignments.forEach((assignment, idx) => {
+            if (this.drones[assignment.droneIndex] && iconData.positions[assignment.targetIndex]) {
+                const drone = this.drones[assignment.droneIndex];
+                const target = iconData.positions[assignment.targetIndex];
+                
+                drone.setTarget(target.target);
+                drone.animateToTarget(1.5, idx * 0.002);
+                
+                // Green glow for Saudi icons
+                gsap.to(drone.core.material.color, {
+                    r: 0,
+                    g: 0.647,
+                    b: 0.314,
+                    duration: 1,
+                    delay: idx * 0.002
+                });
+            }
+        });
+        
+        // Resume timeline after icon display
+        setTimeout(() => {
+            if (this.masterTimeline) {
+                this.masterTimeline.resume();
+            }
+        }, 3000);
     }
 
     update(time, camera) {

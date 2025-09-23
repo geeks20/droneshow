@@ -37,24 +37,35 @@ export class Drone {
         this.mesh.add(this.outerGlow);
         
         // Trail effect
+        this.trailPositions = [];
+        this.maxTrailLength = 15; // Reduced for cleaner look
+        this.trailEnabled = true;
+        this.trailType = 'normal'; // 'normal', 'rainbow', 'sparkle'
         this.createTrail();
         
         this.settled = false;
         this.targetPosition = null;
-        this.trailPositions = [];
     }
     
     createTrail() {
-        // Motion trail (will be added to scene later)
+        // Create trail geometry with max points
+        const positions = new Float32Array(this.maxTrailLength * 3);
+        const colors = new Float32Array(this.maxTrailLength * 3);
+        
         const trailGeometry = new THREE.BufferGeometry();
+        trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        
         const trailMaterial = new THREE.LineBasicMaterial({
-            color: 0xffffff,
+            vertexColors: true,
             transparent: true,
-            opacity: 0.3,
-            blending: THREE.AdditiveBlending
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            linewidth: 2
         });
+        
         this.trail = new THREE.Line(trailGeometry, trailMaterial);
-        // Trail will be added to mesh parent, not scene
+        this.trail.frustumCulled = false;
     }
 
     setPosition(x, y, z) {
@@ -69,6 +80,9 @@ export class Drone {
     // Instant animation to target
     animateToTarget(duration = 0.8, delay = 0) {
         if (!this.targetPosition) return;
+        
+        // Clear previous trail when starting new movement
+        this.clearTrail();
         
         // Kill any existing animations
         gsap.killTweensOf(this.mesh.position);
@@ -98,6 +112,10 @@ export class Drone {
             },
             onComplete: () => {
                 this.settled = true;
+                
+                // Clear trail when settled
+                this.clearTrail();
+                
                 // Scale back up when settled with bounce
                 gsap.to(this.mesh.scale, {
                     x: 1.2,
@@ -149,11 +167,90 @@ export class Drone {
     }
 
     updateTrail() {
-        // Trail effect during movement
-        if (this.trailPositions.length > 8) {
+        if (!this.trailEnabled || !this.trail || this.settled) return;
+        
+        // Only add positions during movement
+        const currentPos = this.mesh.position.clone();
+        
+        // Don't add if position hasn't changed much
+        if (this.trailPositions.length > 0) {
+            const lastPos = this.trailPositions[this.trailPositions.length - 1];
+            const distance = currentPos.distanceTo(lastPos);
+            if (distance < 1) return; // Skip if too close
+        }
+        
+        // Add new position
+        this.trailPositions.push(currentPos);
+        
+        // Limit trail length
+        if (this.trailPositions.length > this.maxTrailLength) {
             this.trailPositions.shift();
         }
-        this.trailPositions.push(this.mesh.position.clone());
+        
+        // Update trail geometry
+        const positions = this.trail.geometry.attributes.position.array;
+        const colors = this.trail.geometry.attributes.color.array;
+        
+        // Clear all positions first
+        positions.fill(0);
+        
+        for (let i = 0; i < this.trailPositions.length; i++) {
+            const pos = this.trailPositions[i];
+            const idx = i * 3;
+            
+            positions[idx] = pos.x;
+            positions[idx + 1] = pos.y;
+            positions[idx + 2] = pos.z;
+            
+            // Color based on trail type
+            if (this.trailType === 'rainbow') {
+                const hue = (i / this.trailPositions.length + Date.now() * 0.0001) % 1;
+                const color = new THREE.Color().setHSL(hue, 1, 0.6);
+                colors[idx] = color.r;
+                colors[idx + 1] = color.g;
+                colors[idx + 2] = color.b;
+            } else if (this.trailType === 'sparkle') {
+                const intensity = Math.random() * 0.5 + 0.5;
+                colors[idx] = intensity;
+                colors[idx + 1] = intensity * 0.8;
+                colors[idx + 2] = intensity;
+            } else {
+                // Normal trail - fade out
+                const alpha = i / this.trailPositions.length;
+                colors[idx] = alpha;
+                colors[idx + 1] = alpha;
+                colors[idx + 2] = alpha;
+            }
+        }
+        
+        // Clear rest of array
+        for (let i = this.trailPositions.length * 3; i < positions.length; i++) {
+            positions[i] = 0;
+            colors[i] = 0;
+        }
+        
+        this.trail.geometry.attributes.position.needsUpdate = true;
+        this.trail.geometry.attributes.color.needsUpdate = true;
+        this.trail.geometry.setDrawRange(0, this.trailPositions.length);
+    }
+    
+    setTrailType(type) {
+        this.trailType = type;
+        if (type === 'sparkle' && this.trail) {
+            this.trail.material.opacity = 0.8;
+        } else if (this.trail) {
+            this.trail.material.opacity = 0.6;
+        }
+    }
+    
+    clearTrail() {
+        this.trailPositions = [];
+        if (this.trail && this.trail.geometry) {
+            const positions = this.trail.geometry.attributes.position.array;
+            positions.fill(0);
+            this.trail.geometry.attributes.position.needsUpdate = true;
+            this.trail.geometry.setDrawRange(0, 0);
+        }
     }
     
     flash() {
