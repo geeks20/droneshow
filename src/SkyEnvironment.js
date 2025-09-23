@@ -6,7 +6,7 @@ export class SkyEnvironment {
         this.createSky();
         this.createStars();
         this.createGround();
-        this.createClouds();
+        // Removed clouds
     }
 
     createSky() {
@@ -117,50 +117,8 @@ export class SkyEnvironment {
     }
 
     createClouds() {
+        // Clouds removed for cleaner look
         this.clouds = [];
-        const cloudCount = 5;
-        
-        for (let i = 0; i < cloudCount; i++) {
-            const cloudGroup = new THREE.Group();
-            
-            // Create cloud using multiple spheres
-            const sphereCount = 8;
-            for (let j = 0; j < sphereCount; j++) {
-                const radius = 30 + Math.random() * 20;
-                const geometry = new THREE.SphereGeometry(radius, 8, 6);
-                const material = new THREE.MeshPhongMaterial({
-                    color: 0x444466,
-                    transparent: true,
-                    opacity: 0.3,
-                    emissive: 0x111133,
-                    emissiveIntensity: 0.1
-                });
-                
-                const sphere = new THREE.Mesh(geometry, material);
-                sphere.position.set(
-                    Math.random() * 60 - 30,
-                    Math.random() * 20 - 10,
-                    Math.random() * 40 - 20
-                );
-                
-                cloudGroup.add(sphere);
-            }
-            
-            // Position cloud
-            cloudGroup.position.set(
-                Math.random() * 800 - 400,
-                200 + Math.random() * 100,
-                Math.random() * 400 - 200
-            );
-            
-            cloudGroup.userData = {
-                speed: 0.01 + Math.random() * 0.02,
-                initialX: cloudGroup.position.x
-            };
-            
-            this.clouds.push(cloudGroup);
-            this.scene.add(cloudGroup);
-        }
     }
 
     update(time) {
@@ -176,11 +134,7 @@ export class SkyEnvironment {
         }
         sizes.needsUpdate = true;
         
-        // Animate clouds
-        this.clouds.forEach((cloud) => {
-            cloud.position.x = cloud.userData.initialX + Math.sin(time * cloud.userData.speed) * 50;
-            cloud.rotation.y = time * 0.0001;
-        });
+        // Removed cloud animation
         
         // Subtle sky color animation
         const skyUniforms = this.sky.material.uniforms;

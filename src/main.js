@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { DroneShowManager } from './DroneShowManager.js';
+import { DroneShowManager } from './FastDroneShowManager.js';
 import { TextToFormation } from './TextToFormation.js';
 import { SkyEnvironment } from './SkyEnvironment.js';
 
@@ -13,10 +13,10 @@ class DroneShowApp {
     }
 
     init() {
-        // Scene setup
+        // Scene setup - darker for better contrast
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x001122);
-        this.scene.fog = new THREE.Fog(0x001122, 100, 1500);
+        this.scene.background = new THREE.Color(0x000511);
+        this.scene.fog = new THREE.Fog(0x000511, 100, 1500);
 
         // Camera setup
         this.camera = new THREE.PerspectiveCamera(
