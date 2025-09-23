@@ -190,55 +190,65 @@ export class SaudiIcons {
     generateKaabaIcon() {
         const positions = [];
         
-        // Simple 3D cube representation
+        // Create a more detailed Kaaba representation
         const kaaba = [];
         
-        // Front face square
-        for (let x = -30; x <= 30; x += 5) {
-            kaaba.push({ x, y: -25 }); // Bottom
-            kaaba.push({ x, y: 25 }); // Top
-        }
-        for (let y = -25; y <= 25; y += 5) {
-            kaaba.push({ x: -30, y }); // Left
-            kaaba.push({ x: 30, y }); // Right
-        }
-        
-        // 3D perspective lines to back corner
-        const perspectiveLines = [
-            // From front corners to back
-            [{ x: -30, y: 25 }, { x: -15, y: 40 }],
-            [{ x: 30, y: 25 }, { x: 45, y: 40 }],
-            [{ x: 30, y: -25 }, { x: 45, y: -10 }],
-            
-            // Back edges
-            [{ x: -15, y: 40 }, { x: 45, y: 40 }],
-            [{ x: 45, y: 40 }, { x: 45, y: -10 }]
-        ];
-        
-        perspectiveLines.forEach(line => {
-            for (let t = 0; t <= 1; t += 0.1) {
-                const x = line[0].x + (line[1].x - line[0].x) * t;
-                const y = line[0].y + (line[1].y - line[0].y) * t;
-                kaaba.push({ x, y });
+        // Base square (larger and more filled)
+        for (let x = -40; x <= 40; x += 4) {
+            for (let y = -35; y <= 35; y += 4) {
+                // Create filled square with some gaps for definition
+                if (Math.abs(x) === 40 || Math.abs(y) === 35 || // Outer border
+                    (Math.abs(x) <= 36 && Math.abs(y) <= 31 && (x % 8 === 0 || y % 8 === 0))) { // Inner grid
+                    kaaba.push({ x, y: y - 5 });
+                }
             }
-        });
-        
-        // Kiswah band (golden band around Kaaba)
-        for (let x = -25; x <= 25; x += 3) {
-            kaaba.push({ x, y: 10 });
-            kaaba.push({ x, y: 5 });
         }
         
-        // Door area
-        for (let y = -25; y <= -5; y += 3) {
-            kaaba.push({ x: -10, y });
-            kaaba.push({ x: -5, y });
+        // Kiswah (black drape) with gold band representation
+        // Gold band around upper portion
+        for (let x = -36; x <= 36; x += 2) {
+            kaaba.push({ x, y: 15 });
+            kaaba.push({ x, y: 18 });
+            kaaba.push({ x, y: 21 });
         }
         
+        // Vertical gold stripes
+        for (let y = -30; y <= 25; y += 3) {
+            kaaba.push({ x: -20, y });
+            kaaba.push({ x: 0, y });
+            kaaba.push({ x: 20, y });
+        }
+        
+        // Door of Kaaba (Bab al-Kaaba) - on the eastern side
+        for (let y = -30; y <= -10; y += 2) {
+            kaaba.push({ x: -15, y });
+            kaaba.push({ x: -13, y });
+            kaaba.push({ x: -11, y });
+            kaaba.push({ x: -9, y });
+            kaaba.push({ x: -7, y });
+        }
+        
+        // Black Stone corner marker (Hajar al-Aswad)
+        const blackStoneCorner = [
+            { x: -40, y: -35 }, { x: -38, y: -35 }, { x: -36, y: -35 },
+            { x: -40, y: -33 }, { x: -38, y: -33 }, { x: -36, y: -33 },
+            { x: -40, y: -31 }, { x: -38, y: -31 }, { x: -36, y: -31 }
+        ];
+        kaaba.push(...blackStoneCorner);
+        
+        // Add slight 3D effect with top outline
+        for (let x = -35; x <= 35; x += 5) {
+            kaaba.push({ x: x - 5, y: 38 });
+        }
+        for (let y = -30; y <= 35; y += 5) {
+            kaaba.push({ x: -40, y: y + 3 });
+        }
+        
+        // Convert to drone positions
         kaaba.forEach(point => {
             positions.push({
-                x: point.x * 1.8,
-                y: point.y * 1.5 + 50,
+                x: point.x * 1.5,
+                y: point.y * 1.2 + 50,
                 z: 0
             });
         });

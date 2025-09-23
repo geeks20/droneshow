@@ -3,11 +3,17 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DroneShowManager } from './FastDroneShowManager.js';
 import { TextToFormation } from './TextToFormation.js';
 import { SkyEnvironment } from './SkyEnvironment.js';
+import { SecurityManager } from './SecurityManager.js';
+import { ConsoleProtection } from './ConsoleProtection.js';
+import { ErrorBoundary } from './ErrorBoundary.js';
 
 class DroneShowApp {
     constructor() {
         this.container = document.getElementById('canvas-container');
         this.stats = document.getElementById('stats');
+        this.securityManager = new SecurityManager();
+        this.consoleProtection = new ConsoleProtection();
+        this.errorBoundary = new ErrorBoundary();
         this.init();
         this.setupEventListeners();
     }
@@ -82,6 +88,7 @@ class DroneShowApp {
         const textInput = document.getElementById('text-input');
         const langToggle = document.getElementById('lang-toggle');
         const luckyBtn = document.getElementById('lucky-btn');
+        const audioToggle = document.getElementById('audio-toggle');
 
         // Saudi sayings for the lucky button
         this.saudiSayingsAr = [
@@ -94,20 +101,25 @@ class DroneShowApp {
             'الله لا يغير علينا',
             'السعودية بقلبي قبل اسمي',
             'كبرنا وكبرت عزتنا معها',
-            'الوطن غالي وما له بديل'
+            'الوطن غالي وما له بديل',
+            'سعودي سكايز — ننّوّر السما',
+            'عزّنا بطبعنا',
+            'دام عزك يا وطن',
+            'همة حتى القمة',
+            'رؤية وطن طموح'
         ];
         
         this.saudiSayingsEn = [
-            'SAUDI ARABIA',
+            'SAUDI SKIES — LIGHT THE SKY',
+            'SAUDI NATIONAL DAY 95',
             'VISION 2030',
-            'SAUDI NATIONAL DAY',
             'KINGDOM OF SAUDI ARABIA',
             'SAUDI PRIDE',
-            'ONE NATION',
+            'ONE NATION ONE DREAM',
             'SAUDI STRONG',
             'FUTURE SAUDI',
             'SAUDI FOREVER',
-            'PROUD SAUDI'
+            'PROUD TO BE SAUDI'
         ];
 
         // Initialize language from localStorage or default to Arabic
@@ -118,8 +130,19 @@ class DroneShowApp {
         const charCounter = document.getElementById('char-counter');
         const charCount = document.getElementById('char-count');
         
-        textInput.addEventListener('input', () => {
-            const length = textInput.value.length;
+        textInput.addEventListener('input', (e) => {
+            let text = textInput.value;
+            
+            // Filter out disallowed characters in real-time
+            const allowedPattern = /[ء-ي\u0600-\u06FF\s\w\-—!@#$%^&*()+={}\[\]:;'",.?]/g;
+            const filtered = text.match(allowedPattern);
+            text = filtered ? filtered.join('') : '';
+            
+            if (text !== textInput.value) {
+                textInput.value = text;
+            }
+            
+            const length = text.length;
             charCount.textContent = length;
             
             // Update counter color based on length
@@ -129,13 +152,49 @@ class DroneShowApp {
             } else if (length > 25) {
                 charCounter.classList.add('warning');
             }
+            
+            // Real-time validation for obvious NSFW content
+            if (text.length > 3) {
+                const validation = this.securityManager.validateInput(text);
+                if (!validation.valid) {
+                    textInput.style.borderColor = '#FF4444';
+                    textInput.style.background = 'rgba(255, 68, 68, 0.1)';
+                } else {
+                    textInput.style.borderColor = 'rgba(0, 165, 80, 0.3)';
+                    textInput.style.background = 'rgba(255, 255, 255, 0.05)';
+                }
+            }
         });
 
         generateBtn.addEventListener('click', () => {
-            const text = textInput.value.trim();
-            if (!text) {
-                textInput.value = 'دام عزك يا وطن';
+            // Initialize audio on first interaction
+            if (this.droneShowManager && this.droneShowManager.audioManager) {
+                this.droneShowManager.audioManager.init();
             }
+            
+            // Check rate limiting
+            const rateCheck = this.securityManager.checkRateLimit();
+            if (!rateCheck.allowed) {
+                this.showError(this.currentLang === 'ar' ? rateCheck.message : rateCheck.messageEn);
+                return;
+            }
+            
+            let text = textInput.value.trim();
+            if (!text) {
+                text = 'سعودي سكايز — ننّوّر السما';
+                textInput.value = text;
+            }
+            
+            // Validate and sanitize input
+            const validation = this.securityManager.validateInput(text);
+            if (!validation.valid) {
+                this.showError(this.currentLang === 'ar' ? validation.message : validation.messageEn);
+                return;
+            }
+            
+            // Use sanitized text
+            text = validation.sanitized;
+            textInput.value = text; // Update input with sanitized version
             
             if (text.length > 35) {
                 // Flash the input to show it's too long
@@ -146,7 +205,7 @@ class DroneShowApp {
                 return;
             }
             
-            this.generateShow(textInput.value || 'دام عزك يا وطن');
+            this.generateShow(text);
         });
 
         exportBtn.addEventListener('click', () => {
@@ -154,12 +213,24 @@ class DroneShowApp {
         });
 
         luckyBtn.addEventListener('click', () => {
+            // Initialize audio on first interaction
+            if (this.droneShowManager && this.droneShowManager.audioManager) {
+                this.droneShowManager.audioManager.init();
+            }
+            
+            // Check rate limiting
+            const rateCheck = this.securityManager.checkRateLimit();
+            if (!rateCheck.allowed) {
+                this.showError(this.currentLang === 'ar' ? rateCheck.message : rateCheck.messageEn);
+                return;
+            }
+            
             // Pick a random saying based on current language
             const sayingsArray = this.currentLang === 'ar' ? this.saudiSayingsAr : this.saudiSayingsEn;
             const randomSaying = sayingsArray[Math.floor(Math.random() * sayingsArray.length)];
             textInput.value = randomSaying;
             
-            // Update text direction based on content
+            // Update text direction based on language
             textInput.style.direction = this.currentLang === 'ar' ? 'rtl' : 'ltr';
             
             // Update character counter
@@ -195,20 +266,11 @@ class DroneShowApp {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Auto-generate on load
-        setTimeout(() => {
-            this.generateShow(textInput.value);
-        }, 1000);
+        // Don't auto-generate on load to avoid unwanted audio
         
         // Icon buttons
-        const kingBtn = document.getElementById('king-btn');
         const mbsBtn = document.getElementById('mbs-btn');
         const mapBtn = document.getElementById('map-btn');
-        const kaabaBtn = document.getElementById('kaaba-btn');
-        
-        kingBtn.addEventListener('click', () => {
-            this.droneShowManager.transitionToIcon('king');
-        });
         
         mbsBtn.addEventListener('click', () => {
             this.droneShowManager.transitionToIcon('mbs');
@@ -218,8 +280,17 @@ class DroneShowApp {
             this.droneShowManager.transitionToIcon('map');
         });
         
-        kaabaBtn.addEventListener('click', () => {
-            this.droneShowManager.transitionToIcon('kaaba');
+        // Audio toggle
+        let audioEnabled = true;
+        audioToggle.addEventListener('click', () => {
+            audioEnabled = !audioEnabled;
+            const audioIcon = audioToggle.querySelector('.audio-icon');
+            audioIcon.textContent = audioEnabled ? '🔊' : '🔇';
+            
+            // Update audio manager
+            if (this.droneShowManager && this.droneShowManager.audioManager) {
+                this.droneShowManager.audioManager.masterGain.gain.value = audioEnabled ? 0.3 : 0;
+            }
         });
     }
 
@@ -236,17 +307,24 @@ class DroneShowApp {
             // Update stats
             this.updateStats(formationData.droneCount);
         } catch (error) {
-            console.error('Error generating show:', error);
+            // Error generating show
         } finally {
             document.getElementById('loading').style.display = 'none';
         }
     }
 
     updateStats(droneCount) {
-        this.stats.innerHTML = `
-            <div>Drones: <span>${droneCount}</span></div>
-            <div>FPS: <span>${Math.round(1000 / this.deltaTime)}</span></div>
-        `;
+        if (this.currentLang === 'ar') {
+            this.stats.innerHTML = `
+                <div>الطائرات: <span>${droneCount}</span></div>
+                <div>الإطارات: <span>${Math.round(1000 / this.deltaTime)}</span></div>
+            `;
+        } else {
+            this.stats.innerHTML = `
+                <div>Drones: <span>${droneCount}</span></div>
+                <div>FPS: <span>${Math.round(1000 / this.deltaTime)}</span></div>
+            `;
+        }
     }
 
     animate() {
@@ -297,15 +375,63 @@ class DroneShowApp {
             element.textContent = element.getAttribute(`data-${this.currentLang}`);
         });
         
+        // Update tooltips for elements with data-title attributes
+        const tooltipElements = document.querySelectorAll('[data-title-ar][data-title-en]');
+        tooltipElements.forEach(element => {
+            element.title = element.getAttribute(`data-title-${this.currentLang}`);
+        });
+        
         // Update text direction for buttons
         const buttons = document.querySelectorAll('.button');
         buttons.forEach(button => {
             button.style.direction = this.currentLang === 'ar' ? 'rtl' : 'ltr';
         });
         
+        // Update text input direction
+        const textInput = document.getElementById('text-input');
+        textInput.style.direction = this.currentLang === 'ar' ? 'rtl' : 'ltr';
+        textInput.placeholder = this.currentLang === 'ar' ? 'أدخل النص هنا...' : 'Enter text here...';
+        
         // Update lang toggle icon
         const langToggle = document.getElementById('lang-toggle');
         langToggle.innerHTML = this.currentLang === 'ar' ? '<span class="lang-icon">EN</span>' : '<span class="lang-icon">عر</span>';
+        
+        // Update stats labels
+        this.updateStats(this.droneShowManager?.drones?.length || 0);
+    }
+
+    showError(message) {
+        // Create error notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 68, 68, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            direction: ${this.currentLang === 'ar' ? 'rtl' : 'ltr'};
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
     }
 
     async exportVideo() {
@@ -317,7 +443,9 @@ class DroneShowApp {
         link.href = dataURL;
         link.click();
         
-        alert('Video export feature coming soon! Screenshot saved instead.');
+        this.showError(this.currentLang === 'ar' ? 
+            'ميزة تصدير الفيديو قادمة قريباً! تم حفظ لقطة الشاشة' : 
+            'Video export feature coming soon! Screenshot saved instead.');
     }
 }
 

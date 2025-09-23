@@ -10,42 +10,89 @@ export class SaudiFlag {
     }
 
     generateFlagFormation() {
-        // Clear canvas
-        this.ctx.fillStyle = '#000000';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        const positions = [];
+        const rows = 20;
+        const cols = 35;
+        const spacing = 5;
         
-        // Draw Saudi flag
-        const flagWidth = 1000;
-        const flagHeight = 600;
-        const flagX = (this.canvas.width - flagWidth) / 2;
-        const flagY = (this.canvas.height - flagHeight) / 2;
+        // Flag dimensions
+        const width = cols * spacing;
+        const height = rows * spacing;
+        const centerX = 0;
+        const centerY = 50;
         
-        // Green background
-        this.ctx.fillStyle = '#00A550';
-        this.ctx.fillRect(flagX, flagY, flagWidth, flagHeight);
-        
-        // Shahada (Islamic creed) - simplified representation
-        this.ctx.fillStyle = 'white';
-        this.ctx.font = 'bold 80px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText('لا إله إلا الله محمد رسول الله', this.canvas.width / 2, this.canvas.height / 2 - 50);
-        
-        // Sword - simplified geometric representation
-        this.ctx.strokeStyle = 'white';
-        this.ctx.lineWidth = 20;
-        this.ctx.beginPath();
-        this.ctx.moveTo(flagX + 200, flagY + 400);
-        this.ctx.lineTo(flagX + 800, flagY + 400);
-        this.ctx.stroke();
-        
-        // Sword handle
-        this.ctx.beginPath();
-        this.ctx.arc(flagX + 180, flagY + 400, 20, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Extract drone positions
-        const positions = this.extractDronePositions();
+        // Create flag grid
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = (col - cols / 2) * spacing + centerX;
+                const y = (row - rows / 2) * spacing + centerY;
+                
+                // Default to Saudi green
+                let color = { r: 0, g: 0.647, b: 0.314 };
+                
+                // Create Shahada (Islamic testimony) - represented as horizontal lines
+                // First line of Shahada
+                if (row === 5 && col >= 8 && col <= 27) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (row === 6 && col >= 6 && col <= 29) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (row === 7 && col >= 7 && col <= 28) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                
+                // Second line of Shahada
+                if (row === 9 && col >= 9 && col <= 26) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (row === 10 && col >= 7 && col <= 28) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (row === 11 && col >= 8 && col <= 27) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                
+                // Create sword shape
+                // Blade (horizontal)
+                if (row === 14 && col >= 6 && col <= 28) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (row === 15 && col >= 5 && col <= 29) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                
+                // Handle (left side)
+                if (col === 5 && row >= 13 && row <= 16) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (col === 6 && row >= 13 && row <= 14) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                
+                // Guard
+                if (col === 7 && row >= 12 && row <= 17) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (col === 8 && row >= 13 && row <= 16) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                
+                // Tip (right side)
+                if (col === 29 && row === 14) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                if (col === 28 && row === 15) {
+                    color = { r: 1, g: 1, b: 1 };
+                }
+                
+                positions.push({
+                    target: { x, y, z: 0 },
+                    index: positions.length,
+                    color: color
+                });
+            }
+        }
         
         return {
             positions: positions,

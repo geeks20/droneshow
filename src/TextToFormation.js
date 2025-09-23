@@ -33,7 +33,7 @@ export class TextToFormation {
             }
         } while (textWidth > maxWidth && fontSize > minFontSize);
         
-        console.log(`Text: "${text}", Font size: ${fontSize}px, Width: ${textWidth}px`);
+        // Text dimensions calculated
         
         // Adjust spacing based on font size for better density
         if (fontSize < 140) {

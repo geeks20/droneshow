@@ -1,9 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drone Show Simulator</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://scripts.simpleanalyticscdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://queue.simpleanalyticscdn.com; connect-src 'self' https://queue.simpleanalyticscdn.com; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none';">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+    <title>سعودي سكايز — ننّوّر السما لليوم الوطني السعودي 95</title>
+    <meta name="description" content="سعودي سكايز - عروض الطائرات بدون طيار للاحتفال باليوم الوطني السعودي 95. ننّوّر السما بالأخضر والأبيض">
+    <meta name="keywords" content="سعودي سكايز, اليوم الوطني السعودي, عروض طائرات بدون طيار, السعودية, اليوم الوطني 95, ننور السما, عروض ضوئية">
+    <meta property="og:title" content="سعودي سكايز — ننّوّر السما لليوم الوطني السعودي 95">
+    <meta property="og:description" content="عروض طائرات بدون طيار مذهلة للاحتفال باليوم الوطني السعودي 95">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="سعودي سكايز — ننّوّر السما لليوم الوطني السعودي 95">
+    <meta name="twitter:description" content="عروض طائرات بدون طيار مذهلة للاحتفال باليوم الوطني السعودي 95">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -420,13 +434,14 @@
     <div id="national-day-badge">
         <span class="year">95</span>
         <div class="title">عزّنا بطبعنا</div>
-        <div class="subtitle">SAUDI NATIONAL DAY</div>
+        <div class="subtitle">اليوم الوطني السعودي</div>
     </div>
     <div id="controls">
         <div class="input-container">
-            <input type="text" id="text-input" placeholder="أدخل النص هنا..." value="دام عزك يا وطن" maxlength="35">
+            <input type="text" id="text-input" placeholder="أدخل النص هنا..." value="سعودي سكايز — ننّوّر السما" maxlength="35" 
+               pattern="[ء-ي\u0600-\u06FF\s\w\-—!@#$%^&*()+={}\[\]:;'&quot;,.?]+">
             <div class="char-counter" id="char-counter">
-                <span id="char-count">14</span>/35
+                <span id="char-count">26</span>/35
             </div>
         </div>
         <div class="divider"></div>
@@ -435,14 +450,15 @@
         <button class="button lucky-btn" id="lucky-btn" data-ar="جرّب حظك 🎲" data-en="I'm Feeling Lucky 🎲">جرّب حظك 🎲</button>
         <div class="divider"></div>
         <div class="icon-buttons">
-            <button class="icon-btn" id="king-btn" title="Saudi Flag">🇸🇦</button>
-            <button class="icon-btn" id="mbs-btn" title="Crown Prince MBS">🤴</button>
-            <button class="icon-btn" id="map-btn" title="Saudi Arabia Map">🗺️</button>
-            <button class="icon-btn" id="kaaba-btn" title="Kaaba">🕋</button>
+            <button class="icon-btn" id="mbs-btn" data-title-ar="رؤية 2030" data-title-en="Vision 2030" title="رؤية 2030">🤴</button>
+            <button class="icon-btn" id="map-btn" data-title-ar="خريطة السعودية" data-title-en="Saudi Map" title="خريطة السعودية">🗺️</button>
         </div>
         <div class="divider"></div>
-        <button class="lang-toggle" id="lang-toggle" title="Switch Language">
+        <button class="lang-toggle" id="lang-toggle" data-title-ar="تغيير اللغة" data-title-en="Switch Language" title="تغيير اللغة">
             <span class="lang-icon">🌐</span>
+        </button>
+        <button class="lang-toggle" id="audio-toggle" data-title-ar="التحكم بالصوت" data-title-en="Toggle Sound" title="التحكم بالصوت">
+            <span class="audio-icon">🔊</span>
         </button>
     </div>
     <div id="loading">
@@ -450,15 +466,15 @@
         <div id="loading-text" data-ar="جاري إنشاء عرض الطائرات..." data-en="Creating drone show...">جاري إنشاء عرض الطائرات...</div>
     </div>
     <div class="stats" id="stats">
-        <div>Drones: <span>0</span></div>
-        <div>FPS: <span>0</span></div>
+        <div>الطائرات: <span>0</span></div>
+        <div>الإطارات: <span>0</span></div>
     </div>
     
     <!-- Camera controls hint -->
-    <div class="controls-hint">
-        <div class="hint-item">🖱️ Left Click + Drag: Rotate</div>
-        <div class="hint-item">📏 Scroll: Zoom</div>
-        <div class="hint-item">✋ Right Click + Drag: Pan</div>
+    <div class="controls-hint" id="controls-hint">
+        <div class="hint-item" data-ar="🖱️ اسحب للتدوير" data-en="🖱️ Left Click + Drag: Rotate">🖱️ اسحب للتدوير</div>
+        <div class="hint-item" data-ar="📏 مرر للتكبير" data-en="📏 Scroll: Zoom">📏 مرر للتكبير</div>
+        <div class="hint-item" data-ar="✋ انقر بالزر الأيمن للتحريك" data-en="✋ Right Click + Drag: Pan">✋ انقر بالزر الأيمن للتحريك</div>
     </div>
     <script type="module" src="/src/main.js"></script>
     

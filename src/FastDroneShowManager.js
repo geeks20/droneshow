@@ -5,6 +5,7 @@ import { SaudiFlag } from './SaudiFlag.js';
 import { SaudiConfetti } from './SaudiConfetti.js';
 import { WaveEffect } from './WaveEffect.js';
 import { SaudiIcons } from './SaudiIcons.js';
+import { AudioManager } from './AudioManager.js';
 
 export class DroneShowManager {
     constructor(scene) {
@@ -15,6 +16,7 @@ export class DroneShowManager {
         this.saudiConfetti = new SaudiConfetti(scene);
         this.waveEffect = new WaveEffect();
         this.saudiIcons = new SaudiIcons();
+        this.audioManager = new AudioManager();
         this.coolEffects = null; // Will be set from main
     }
 
@@ -27,7 +29,7 @@ export class DroneShowManager {
         
         // Create drones at random starting positions
         const droneCount = formationData.droneCount;
-        console.log(`Creating ${droneCount} fast drones`);
+        // Creating drones
         
         for (let i = 0; i < droneCount; i++) {
             const drone = new Drone();
@@ -60,7 +62,7 @@ export class DroneShowManager {
         
         this.masterTimeline = gsap.timeline({
             onComplete: () => {
-                console.log('Show complete');
+                // Show complete
             }
         });
         
@@ -91,6 +93,8 @@ export class DroneShowManager {
             // Sparkle trails for flag formation
             this.drones.forEach(drone => drone.setTrailType('sparkle'));
             this.transitionToFlag();
+            // Play flag reveal tone
+            this.audioManager.playFlagRevealTone();
             // Show National Day badge
             this.showNationalDayBadge();
             // Start confetti
@@ -115,8 +119,7 @@ export class DroneShowManager {
     }
 
     createHiddenReveal(formationData) {
-        console.log('Hidden reveal effect');
-        console.log(`Drones: ${this.drones.length}, Positions: ${formationData.positions.length}`);
+        // Hidden reveal effect
         
         // Make sure we have the right assignments
         const currentPositions = this.drones.map(d => d.mesh.position);
@@ -139,6 +142,9 @@ export class DroneShowManager {
         
         // Then assign drones to actual targets
         setTimeout(() => {
+            // Play reveal tone
+            this.audioManager.playRevealTone();
+            
             assignments.forEach((assignment, idx) => {
                 if (this.drones[assignment.droneIndex] && formationData.positions[assignment.targetIndex]) {
                     const drone = this.drones[assignment.droneIndex];
@@ -155,7 +161,7 @@ export class DroneShowManager {
     }
     
     createPopOutStars() {
-        console.log('Pop-out stars effect');
+        // Pop-out stars effect
         
         // Select random 20% of drones for pop-out
         const popCount = Math.floor(this.drones.length * 0.2);
@@ -211,7 +217,7 @@ export class DroneShowManager {
     
     
     transitionToFlag() {
-        console.log('Transitioning to flag');
+        // Transitioning to flag
         const flagData = this.saudiFlag.generateFlagFormation();
         
         // Quick assignment
@@ -245,7 +251,7 @@ export class DroneShowManager {
     }
 
     startFireworks() {
-        console.log('Starting fireworks');
+        // Starting fireworks
         this.drones.forEach((drone, i) => {
             // Saudi colors only - green and white
             const useSaudiGreen = Math.random() > 0.5;
@@ -299,7 +305,7 @@ export class DroneShowManager {
     }
     
     resetShow() {
-        console.log('Resetting show');
+        // Resetting show
         // Hide badge
         const badge = document.getElementById('national-day-badge');
         if (badge) {
@@ -330,21 +336,15 @@ export class DroneShowManager {
     }
 
     transitionToIcon(iconType) {
-        console.log(`Transitioning to ${iconType} icon`);
+        // Transitioning to icon
         
         let iconData;
         switch(iconType) {
-            case 'king':
-                iconData = this.saudiIcons.generateKingSalmanIcon();
-                break;
             case 'mbs':
                 iconData = this.saudiIcons.generateMBSIcon();
                 break;
             case 'map':
                 iconData = this.saudiIcons.generateSaudiMapIcon();
-                break;
-            case 'kaaba':
-                iconData = this.saudiIcons.generateKaabaIcon();
                 break;
             default:
                 return;
@@ -377,6 +377,9 @@ export class DroneShowManager {
         
         // Enable sparkle trails for icon formation
         this.drones.forEach(drone => drone.setTrailType('sparkle'));
+        
+        // Play icon transition tone
+        this.audioManager.playIconTone();
         
         // Animate to icon positions
         assignments.forEach((assignment, idx) => {
