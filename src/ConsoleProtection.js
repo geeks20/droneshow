@@ -5,6 +5,9 @@ export class ConsoleProtection {
                            window.location.hostname !== '127.0.0.1' &&
                            !window.location.hostname.includes('192.168.');
         
+        // Temporarily disable for debugging
+        this.isProduction = false;
+        
         if (this.isProduction) {
             this.disableConsole();
             this.preventDevTools();
@@ -75,8 +78,8 @@ export class ConsoleProtection {
         
         setInterval(() => {
             checkStatus = false;
-            console.log(element);
-            console.clear();
+            // console.log(element);
+            // console.clear();
             if (checkStatus) {
                 this.handleDevToolsOpen();
             }

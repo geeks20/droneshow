@@ -9,13 +9,19 @@ import { ErrorBoundary } from './ErrorBoundary.js';
 
 class DroneShowApp {
     constructor() {
-        this.container = document.getElementById('canvas-container');
-        this.stats = document.getElementById('stats');
-        this.securityManager = new SecurityManager();
-        this.consoleProtection = new ConsoleProtection();
-        this.errorBoundary = new ErrorBoundary();
-        this.init();
-        this.setupEventListeners();
+        try {
+            this.container = document.getElementById('canvas-container');
+            this.stats = document.getElementById('stats');
+            this.securityManager = new SecurityManager();
+            // Temporarily disable console protection
+            // this.consoleProtection = new ConsoleProtection();
+            this.errorBoundary = new ErrorBoundary();
+            this.init();
+            this.setupEventListeners();
+        } catch (error) {
+            console.error('Error initializing app:', error);
+            alert('خطأ في تشغيل التطبيق: ' + error.message);
+        }
     }
 
     init() {
@@ -130,18 +136,8 @@ class DroneShowApp {
         const charCounter = document.getElementById('char-counter');
         const charCount = document.getElementById('char-count');
         
-        textInput.addEventListener('input', (e) => {
-            let text = textInput.value;
-            
-            // Filter out disallowed characters in real-time
-            const allowedPattern = /[ء-ي\u0600-\u06FF\s\w\-—!@#$%^&*()+={}\[\]:;'",.?]/g;
-            const filtered = text.match(allowedPattern);
-            text = filtered ? filtered.join('') : '';
-            
-            if (text !== textInput.value) {
-                textInput.value = text;
-            }
-            
+        textInput.addEventListener('input', () => {
+            const text = textInput.value;
             const length = text.length;
             charCount.textContent = length;
             
@@ -151,18 +147,6 @@ class DroneShowApp {
                 charCounter.classList.add('danger');
             } else if (length > 25) {
                 charCounter.classList.add('warning');
-            }
-            
-            // Real-time validation for obvious NSFW content
-            if (text.length > 3) {
-                const validation = this.securityManager.validateInput(text);
-                if (!validation.valid) {
-                    textInput.style.borderColor = '#FF4444';
-                    textInput.style.background = 'rgba(255, 68, 68, 0.1)';
-                } else {
-                    textInput.style.borderColor = 'rgba(0, 165, 80, 0.3)';
-                    textInput.style.background = 'rgba(255, 255, 255, 0.05)';
-                }
             }
         });
 

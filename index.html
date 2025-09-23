@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://scripts.simpleanalyticscdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://queue.simpleanalyticscdn.com; connect-src 'self' https://queue.simpleanalyticscdn.com; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none';">
+    <!-- CSP temporarily relaxed for debugging -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://scripts.simpleanalyticscdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://queue.simpleanalyticscdn.com; connect-src 'self' https://queue.simpleanalyticscdn.com; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none';"> -->
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
@@ -438,8 +439,7 @@
     </div>
     <div id="controls">
         <div class="input-container">
-            <input type="text" id="text-input" placeholder="أدخل النص هنا..." value="سعودي سكايز — ننّوّر السما" maxlength="35" 
-               pattern="[ء-ي\u0600-\u06FF\s\w\-—!@#$%^&*()+={}\[\]:;'&quot;,.?]+">
+            <input type="text" id="text-input" placeholder="أدخل النص هنا..." value="سعودي سكايز — ننّوّر السما" maxlength="35">
             <div class="char-counter" id="char-counter">
                 <span id="char-count">26</span>/35
             </div>

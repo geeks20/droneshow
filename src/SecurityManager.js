@@ -1,7 +1,7 @@
 export class SecurityManager {
     constructor() {
-        // Protect against prototype pollution
-        this.protectPrototypes();
+        // Protect against prototype pollution - disabled for now
+        // this.protectPrototypes();
         // Common NSFW words in multiple languages (Arabic and English)
         this.nsfwWords = [
             // English inappropriate words
@@ -186,22 +186,22 @@ export class SecurityManager {
         const shortTermCount = parseInt(localStorage.getItem('shortTermCount') || '0');
         const shortTermStart = parseInt(localStorage.getItem('shortTermStart') || '0');
         
-        // Check cooldown period (5 seconds between generations)
-        if (now - lastGeneration < 5000) {
+        // Check cooldown period (2 seconds between generations - more reasonable)
+        if (now - lastGeneration < 2000) {
             return {
                 allowed: false,
-                message: 'يرجى الانتظار 5 ثواني',
-                messageEn: 'Please wait 5 seconds'
+                message: 'يرجى الانتظار قليلاً',
+                messageEn: 'Please wait a moment'
             };
         }
         
-        // Check short-term rate limit (3 per minute)
+        // Check short-term rate limit (10 per minute - much more generous)
         if (now - shortTermStart < 60000) {
-            if (shortTermCount >= 3) {
+            if (shortTermCount >= 10) {
                 return {
                     allowed: false,
-                    message: 'حد 3 محاولات بالدقيقة',
-                    messageEn: 'Limit: 3 attempts per minute'
+                    message: 'حد 10 محاولات بالدقيقة',
+                    messageEn: 'Limit: 10 attempts per minute'
                 };
             }
             localStorage.setItem('shortTermCount', (shortTermCount + 1).toString());
@@ -218,8 +218,8 @@ export class SecurityManager {
             return { allowed: true };
         }
         
-        // Check hourly limit (50 per hour)
-        if (generationCount >= 50) {
+        // Check hourly limit (100 per hour - doubled)
+        if (generationCount >= 100) {
             return {
                 allowed: false,
                 message: 'تجاوزت الحد الساعي',
