@@ -56,6 +56,9 @@ class DroneShowApp {
         this.skyEnvironment = new SkyEnvironment(this.scene);
         this.droneShowManager = new DroneShowManager(this.scene);
         this.textToFormation = new TextToFormation();
+        
+        // Add simple ground
+        this.createGround();
 
         // Start animation loop
         this.animate();
@@ -65,14 +68,96 @@ class DroneShowApp {
         const generateBtn = document.getElementById('generate-btn');
         const exportBtn = document.getElementById('export-btn');
         const textInput = document.getElementById('text-input');
+        const langToggle = document.getElementById('lang-toggle');
+        const luckyBtn = document.getElementById('lucky-btn');
+
+        // Saudi sayings for the lucky button
+        this.saudiSayings = [
+            'يا حلو ديرتنا والله',
+            'الوطن بقلوبنا دايم',
+            'من الديرة وأفتخر',
+            'سعودي وأرفع راسي فوق',
+            'الدار دارنا والعز عزنا',
+            'نفداك يا وطن',
+            'الله لا يغير علينا',
+            'السعودية بقلبي قبل اسمي',
+            'كبرنا وكبرت عزتنا معها',
+            'الوطن غالي وما له بديل'
+        ];
+
+        // Initialize language from localStorage or default to Arabic
+        this.currentLang = localStorage.getItem('language') || 'ar';
+        this.updateLanguage();
+
+        // Character counter
+        const charCounter = document.getElementById('char-counter');
+        const charCount = document.getElementById('char-count');
+        
+        textInput.addEventListener('input', () => {
+            const length = textInput.value.length;
+            charCount.textContent = length;
+            
+            // Update counter color based on length
+            charCounter.classList.remove('warning', 'danger');
+            if (length > 30) {
+                charCounter.classList.add('danger');
+            } else if (length > 25) {
+                charCounter.classList.add('warning');
+            }
+        });
 
         generateBtn.addEventListener('click', () => {
-            const text = textInput.value || 'دام عزك يا وطن';
-            this.generateShow(text);
+            const text = textInput.value.trim();
+            if (!text) {
+                textInput.value = 'دام عزك يا وطن';
+            }
+            
+            if (text.length > 35) {
+                // Flash the input to show it's too long
+                textInput.style.borderColor = '#FF4444';
+                setTimeout(() => {
+                    textInput.style.borderColor = 'rgba(0, 165, 80, 0.3)';
+                }, 1000);
+                return;
+            }
+            
+            this.generateShow(textInput.value || 'دام عزك يا وطن');
         });
 
         exportBtn.addEventListener('click', () => {
             this.exportVideo();
+        });
+
+        luckyBtn.addEventListener('click', () => {
+            // Pick a random saying
+            const randomSaying = this.saudiSayings[Math.floor(Math.random() * this.saudiSayings.length)];
+            textInput.value = randomSaying;
+            
+            // Update character counter
+            charCount.textContent = randomSaying.length;
+            charCounter.classList.remove('warning', 'danger');
+            if (randomSaying.length > 30) {
+                charCounter.classList.add('danger');
+            } else if (randomSaying.length > 25) {
+                charCounter.classList.add('warning');
+            }
+            
+            // Add a fun animation to the input
+            textInput.style.transform = 'scale(1.05)';
+            textInput.style.background = 'rgba(255, 215, 0, 0.1)';
+            
+            setTimeout(() => {
+                textInput.style.transform = 'scale(1)';
+                textInput.style.background = 'rgba(255, 255, 255, 0.05)';
+                // Auto-generate the show
+                this.generateShow(randomSaying);
+            }, 200);
+        });
+
+        langToggle.addEventListener('click', () => {
+            this.currentLang = this.currentLang === 'ar' ? 'en' : 'ar';
+            localStorage.setItem('language', this.currentLang);
+            this.updateLanguage();
         });
 
         window.addEventListener('resize', () => {
@@ -108,8 +193,8 @@ class DroneShowApp {
 
     updateStats(droneCount) {
         this.stats.innerHTML = `
-            <div>Drones: ${droneCount}</div>
-            <div>FPS: ${Math.round(1000 / this.deltaTime)}</div>
+            <div>Drones: <span>${droneCount}</span></div>
+            <div>FPS: <span>${Math.round(1000 / this.deltaTime)}</span></div>
         `;
     }
 
@@ -131,6 +216,45 @@ class DroneShowApp {
 
         // Render
         this.renderer.render(this.scene, this.camera);
+    }
+
+    createGround() {
+        // Simple dark ground plane
+        const groundGeometry = new THREE.PlaneGeometry(2000, 2000);
+        const groundMaterial = new THREE.MeshBasicMaterial({
+            color: 0x0a0a0a,
+            transparent: true,
+            opacity: 0.5
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -10;
+        this.scene.add(ground);
+        
+        // Add subtle grid
+        const gridHelper = new THREE.GridHelper(1000, 50, 0x00A550, 0x001a0d);
+        gridHelper.position.y = -9;
+        gridHelper.material.opacity = 0.2;
+        gridHelper.material.transparent = true;
+        this.scene.add(gridHelper);
+    }
+
+    updateLanguage() {
+        // Update all elements with language data attributes
+        const elements = document.querySelectorAll('[data-ar][data-en]');
+        elements.forEach(element => {
+            element.textContent = element.getAttribute(`data-${this.currentLang}`);
+        });
+        
+        // Update text direction for buttons
+        const buttons = document.querySelectorAll('.button');
+        buttons.forEach(button => {
+            button.style.direction = this.currentLang === 'ar' ? 'rtl' : 'ltr';
+        });
+        
+        // Update lang toggle icon
+        const langToggle = document.getElementById('lang-toggle');
+        langToggle.innerHTML = this.currentLang === 'ar' ? '<span class="lang-icon">EN</span>' : '<span class="lang-icon">عر</span>';
     }
 
     async exportVideo() {

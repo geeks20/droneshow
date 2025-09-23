@@ -2,7 +2,7 @@ export class TextToFormation {
     constructor() {
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 900;
+        this.canvas.width = 1200; // Increased width for longer text
         this.canvas.height = 250;
         this.spacing = 14; // Fixed spacing between points
     }
@@ -13,12 +13,50 @@ export class TextToFormation {
         
         // Configure text rendering
         this.ctx.fillStyle = 'white';
-        this.ctx.font = 'bold 180px Arial, sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         
+        // Check if text is English or Arabic
+        const isEnglish = /^[A-Za-z0-9\s]+$/.test(text);
+        
+        // Dynamic font sizing to fit canvas
+        let fontSize = isEnglish ? 120 : 180;
+        const minFontSize = isEnglish ? 80 : 120; // Increased minimum to keep text readable
+        const maxWidth = this.canvas.width * 0.9; // 90% of canvas width for better space usage
+        
+        let textWidth;
+        do {
+            this.ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            textWidth = this.ctx.measureText(text).width;
+            if (textWidth > maxWidth && fontSize > minFontSize) {
+                fontSize -= 5;
+            }
+        } while (textWidth > maxWidth && fontSize > minFontSize);
+        
+        console.log(`Text: "${text}", Font size: ${fontSize}px, Width: ${textWidth}px`);
+        
+        // Adjust spacing based on font size for better density
+        if (fontSize < 140) {
+            this.spacing = 12; // Tighter spacing for smaller text
+        } else {
+            this.spacing = 14; // Normal spacing
+        }
+        
+        if (isEnglish) {
+            this.ctx.direction = 'ltr'; // Force left-to-right
+            // Reset canvas for clean rendering
+            this.ctx.save();
+            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        } else {
+            this.ctx.direction = 'rtl';
+        }
+        
         // Draw text with padding from bottom
         this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height * 0.6);
+        
+        if (isEnglish) {
+            this.ctx.restore(); // Restore context
+        }
         
         // Get pixel data
         const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
