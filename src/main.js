@@ -440,8 +440,17 @@ class DroneShowApp {
             const canvas = this.renderer.domElement;
             const stream = canvas.captureStream(30); // 30 FPS
             
+            // Try MP4 first, fallback to WebM
+            let mimeType = 'video/webm;codecs=vp9';
+            if (MediaRecorder.isTypeSupported('video/mp4')) {
+                mimeType = 'video/mp4';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+                mimeType = 'video/webm;codecs=h264';
+            }
+            
             this.mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp9'
+                mimeType: mimeType,
+                videoBitsPerSecond: 8000000 // 8 Mbps for good quality
             });
             
             this.recordedChunks = [];
@@ -485,14 +494,26 @@ class DroneShowApp {
     }
     
     downloadRecording() {
+        // Determine the correct MIME type and file extension
+        let mimeType = 'video/webm';
+        let fileExtension = 'webm';
+        
+        if (this.mediaRecorder.mimeType.includes('mp4')) {
+            mimeType = 'video/mp4';
+            fileExtension = 'mp4';
+        } else if (this.mediaRecorder.mimeType.includes('h264')) {
+            mimeType = 'video/mp4';
+            fileExtension = 'mp4';
+        }
+        
         const blob = new Blob(this.recordedChunks, {
-            type: 'video/webm'
+            type: mimeType
         });
         
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `saudi-skies-drone-show-${Date.now()}.webm`;
+        link.download = `saudi-skies-drone-show-${Date.now()}.${fileExtension}`;
         link.click();
         
         // Clean up
@@ -500,8 +521,8 @@ class DroneShowApp {
         this.recordedChunks = [];
         
         this.showError(this.currentLang === 'ar' ? 
-            'تم تحميل الفيديو بنجاح!' : 
-            'Video downloaded successfully!');
+            `تم تحميل الفيديو بنجاح! (${fileExtension.toUpperCase()})` : 
+            `Video downloaded successfully! (${fileExtension.toUpperCase()})`);
     }
     
     showRecordingIndicator() {
