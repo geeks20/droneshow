@@ -419,17 +419,132 @@ class DroneShowApp {
     }
 
     async exportVideo() {
-        // This would integrate with a library like CCapture.js
-        // For now, we'll capture a screenshot
-        const dataURL = this.renderer.domElement.toDataURL('image/png');
+        if (this.isRecording) {
+            // Stop recording
+            this.stopRecording();
+            return;
+        }
+        
+        // Start recording
+        this.startRecording();
+    }
+    
+    startRecording() {
+        try {
+            // Update button text
+            const exportBtn = document.getElementById('export-btn');
+            exportBtn.textContent = this.currentLang === 'ar' ? 'إيقاف التسجيل ⏹️' : 'Stop Recording ⏹️';
+            exportBtn.style.background = 'rgba(255, 68, 68, 0.8)';
+            
+            // Set up MediaRecorder
+            const canvas = this.renderer.domElement;
+            const stream = canvas.captureStream(30); // 30 FPS
+            
+            this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
+            
+            this.recordedChunks = [];
+            
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                }
+            };
+            
+            this.mediaRecorder.onstop = () => {
+                this.downloadRecording();
+            };
+            
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            
+            // Show recording indicator
+            this.showRecordingIndicator();
+            
+        } catch (error) {
+            this.showError(this.currentLang === 'ar' ? 
+                'خطأ في بدء التسجيل' : 
+                'Error starting recording');
+        }
+    }
+    
+    stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            
+            // Reset button
+            const exportBtn = document.getElementById('export-btn');
+            exportBtn.textContent = this.currentLang === 'ar' ? 'تحميل الفيديو' : 'Export Video';
+            exportBtn.style.background = 'rgba(0, 165, 80, 0.8)';
+            
+            // Hide recording indicator
+            this.hideRecordingIndicator();
+        }
+    }
+    
+    downloadRecording() {
+        const blob = new Blob(this.recordedChunks, {
+            type: 'video/webm'
+        });
+        
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = 'drone-show-frame.png';
-        link.href = dataURL;
+        link.href = url;
+        link.download = `saudi-skies-drone-show-${Date.now()}.webm`;
         link.click();
         
+        // Clean up
+        URL.revokeObjectURL(url);
+        this.recordedChunks = [];
+        
         this.showError(this.currentLang === 'ar' ? 
-            'ميزة تصدير الفيديو قادمة قريباً! تم حفظ لقطة الشاشة' : 
-            'Video export feature coming soon! Screenshot saved instead.');
+            'تم تحميل الفيديو بنجاح!' : 
+            'Video downloaded successfully!');
+    }
+    
+    showRecordingIndicator() {
+        // Create recording indicator
+        const indicator = document.createElement('div');
+        indicator.id = 'recording-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 68, 68, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            animation: pulse 1.5s infinite;
+        `;
+        indicator.innerHTML = `🔴 ${this.currentLang === 'ar' ? 'جاري التسجيل' : 'Recording'}`;
+        
+        // Add pulsing animation
+        if (!document.getElementById('pulse-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-style';
+            style.textContent = `
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(indicator);
+    }
+    
+    hideRecordingIndicator() {
+        const indicator = document.getElementById('recording-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
     }
 }
 
